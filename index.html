@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>樽職人 木材・スピリッツペアリングクイズ</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: 'Hiragino Kana', 'Noto Sans JP', sans-serif; }
+  .tab-btn { padding:8px 14px; border-radius:9999px; font-weight:600; font-size:0.8rem; transition:all 0.2s; }
+  .tab-btn.active { background:#78350f; color:white; }
+  .tab-btn:not(.active) { background:#e5e7eb; color:#374151; }
+  button:focus { outline:3px solid #92400e; outline-offset:2px; }
+  .opt-btn:focus { outline:3px solid #92400e; outline-offset:2px; }
+  .flavor-bar { transition:width 0.5s ease; }
+  .wood-grain {
+    background-image: repeating-linear-gradient(
+      90deg,
+      transparent, transparent 2px,
+      rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px
+    );
+  }
+</style>
+</head>
+<body class="bg-amber-50 min-h-screen">
+
+<header class="bg-amber-900 text-white py-4 px-4 shadow-lg">
+  <div class="max-w-2xl mx-auto flex items-center gap-3">
+    <span class="text-3xl" aria-hidden="true">🥃</span>
+    <div>
+      <h1 class="text-xl font-bold">樽職人 木材・スピリッツペアリングクイズ</h1>
+      <p class="text-amber-200 text-sm">樽材とウイスキーの風味を学ぼう</p>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-2xl mx-auto p-4">
+
+  <!-- Tabs -->
+  <div class="flex gap-2 mt-4 mb-4 flex-wrap" role="tablist">
+    <button class="tab-btn active" id="tab-quiz" role="tab">クイズ</button>
+    <button class="tab-btn" id="tab-chart" role="tab">風味チャート</button>
+    <button class="tab-btn" id="tab-glossary" role="tab">用語集</button>
+  </div>
+
+  <!-- Quiz Panel -->
+  <div id="panel-quiz">
+    <div id="quiz-home">
+      <div class="bg-white rounded-2xl shadow p-5 mb-4">
+        <h2 class="font-bold text-gray-800 mb-3">クイズモードを選択</h2>
+        <div class="space-y-2">
+          <button class="quiz-mode-btn w-full text-left bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl py-3 px-4 font-semibold text-sm" data-mode="barrel2flavor">樽→風味: この樽材の特徴的な風味は？</button>
+          <button class="quiz-mode-btn w-full text-left bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl py-3 px-4 font-semibold text-sm" data-mode="flavor2barrel">風味→樽: この風味プロフィールはどの樽？</button>
+          <button class="quiz-mode-btn w-full text-left bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl py-3 px-4 font-semibold text-sm" data-mode="spirit2barrel">スピリッツ→樽: この酒は伝統的にどの樽で熟成？</button>
+        </div>
+      </div>
+      <div class="bg-white rounded-2xl shadow p-4 flex justify-between items-center">
+        <div class="text-sm text-gray-600">ベストスコア: <span id="best-score-coop" class="font-bold text-amber-800">-</span></div>
+        <button id="btn-reset-coop" class="text-xs text-gray-400 hover:text-red-600 underline">リセット</button>
+      </div>
+    </div>
+
+    <div id="quiz-active" class="hidden">
+      <div class="flex items-center justify-between mb-3 mt-1">
+        <button id="btn-quit-quiz" class="text-sm text-amber-800 hover:underline font-bold">← 戻る</button>
+        <div class="text-sm text-gray-500">問 <span id="q-num">1</span>/8 &nbsp; <span id="score-disp" class="text-amber-800 font-bold">0点</span></div>
+      </div>
+      <div class="bg-gray-200 rounded-full h-2 mb-4">
+        <div id="q-progress" class="bg-amber-700 h-2 rounded-full transition-all" style="width:0%"></div>
+      </div>
+      <div class="bg-white rounded-2xl shadow p-5">
+        <div id="q-label" class="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-2"></div>
+        <div id="q-text" class="text-base font-bold text-gray-900 mb-5 leading-relaxed"></div>
+        <div id="q-options" class="space-y-2"></div>
+      </div>
+      <div id="q-explanation" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-4 mt-3">
+        <div id="exp-result" class="font-bold text-sm mb-1"></div>
+        <p id="exp-text" class="text-sm text-gray-700 leading-relaxed"></p>
+        <button id="btn-next-q" class="mt-3 bg-amber-800 hover:bg-amber-900 text-white py-2 px-5 rounded-lg font-bold text-sm">次へ →</button>
+      </div>
+    </div>
+
+    <div id="quiz-result" class="hidden">
+      <div class="bg-white rounded-2xl shadow p-6 mt-2 text-center">
+        <div id="res-emoji" class="text-5xl mb-2">🥃</div>
+        <div id="res-score" class="text-3xl font-bold text-amber-800 mb-3"></div>
+        <button id="btn-replay" class="bg-amber-800 hover:bg-amber-900 text-white py-2 px-6 rounded-xl font-bold mr-2">もう一度</button>
+        <button id="btn-home-res" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-6 rounded-xl font-bold">ホームへ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flavor Chart Panel -->
+  <div id="panel-chart" class="hidden">
+    <div class="bg-white rounded-2xl shadow p-5 mt-1">
+      <h2 class="font-bold text-gray-800 mb-1">樽材 風味プロフィールチャート</h2>
+      <p class="text-xs text-gray-500 mb-4">各樽材の風味特性を5段階で比較</p>
+      <div id="barrel-selector" class="flex flex-wrap gap-2 mb-5"></div>
+      <div id="flavor-chart" class="space-y-3"></div>
+      <!-- Wood grain illustration -->
+      <div id="wood-info" class="mt-5 p-4 rounded-xl border border-amber-200"></div>
+    </div>
+  </div>
+
+  <!-- Glossary Panel -->
+  <div id="panel-glossary" class="hidden">
+    <div class="bg-white rounded-2xl shadow p-5 mt-1">
+      <h2 class="font-bold text-gray-800 mb-3">樽職人用語集</h2>
+      <div id="coop-glossary" class="space-y-2"></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+const BARRELS = [
+  {
+    id:'american-oak',
+    name:'アメリカンオーク',
+    nameEn:'American Oak (Quercus alba)',
+    color:'#d4a855',
+    spirits:['バーボン','テネシーウイスキー','アメリカンウイスキー'],
+    flavors:{ vanilla:5, spice:2, fruit:1, earth:1, floral:2, sweet:4, wood:3 },
+    desc:'ホワイトオークとも呼ばれる。バーボン法律で必須の新品チャー樽。バニラ・ヤシの実・軽い甘みを付与。多孔質で熟成が速い。',
+    charInfo:'チャーレベル#2〜#3が標準。内面を炭化させることでバニリンを生成。',
+    grain:'粗い木目',
+  },
+  {
+    id:'french-oak',
+    name:'フレンチオーク',
+    nameEn:'French Oak (Quercus petraea)',
+    color:'#8b6914',
+    spirits:['コニャック','アルマニャック','ボルドーワイン'],
+    flavors:{ vanilla:3, spice:5, fruit:2, earth:4, floral:3, sweet:2, wood:5 },
+    desc:'スパイシーでアースィーなキャラクター。木目が細かく風味抽出が遅い。コニャック・ボルドーワインの伝統的な樽材。',
+    charInfo:'ワイン熟成では通常チャーなし。ウイスキー用に軽くトースト。',
+    grain:'細かい木目',
+  },
+  {
+    id:'sherry',
+    name:'シェリー樽',
+    nameEn:'Sherry Cask (Oloroso/Pedro Ximénez)',
+    color:'#5c2d0a',
+    spirits:['スコッチウイスキー（マッカラン等）','スペイン産シェリー酒'],
+    flavors:{ vanilla:2, spice:3, fruit:5, earth:2, floral:1, sweet:5, wood:3 },
+    desc:'ドライフルーツ・ナッツ・チョコレートを付与。スペインのボデガでシェリー酒熟成後にスコットランドへ送られる。希少で高価。',
+    charInfo:'シェリーウッド（seasoned wood）が重要。内面はシェリーで「シーズニング」済み。',
+    grain:'スペイン産オーク',
+  },
+  {
+    id:'mizunara',
+    name:'ミズナラ',
+    nameEn:'Mizunara Oak (Quercus mongolica)',
+    color:'#6b4c11',
+    spirits:['ジャパニーズウイスキー（山崎・響等）'],
+    flavors:{ vanilla:2, spice:3, fruit:1, earth:3, floral:5, sweet:3, wood:4 },
+    desc:'白檀・お香・ヤシの実のような東洋的な芳香。日本固有の樫。乾燥に時間がかかり、加工が難しく高価。熟成に長期間が必要。',
+    charInfo:'水分量が高く割れやすい。最低でも30年以上熟成が理想的とされる。',
+    grain:'不規則な木目',
+  },
+  {
+    id:'port',
+    name:'ポートワイン樽',
+    nameEn:'Port Wine Cask',
+    color:'#7b2d4f',
+    spirits:['スコッチウイスキー（フィニッシュ用）','アイリッシュウイスキー'],
+    flavors:{ vanilla:1, spice:2, fruit:5, earth:1, floral:3, sweet:5, wood:2 },
+    desc:'赤系果実・甘み・タンニンを付与。ポルトガルのドウロ地方産ポートワインの熟成後に使用。フィニッシュとして6〜18ヶ月使用されることが多い。',
+    charInfo:'LBV・Rubyなどポートの種類で風味が異なる。ルビーポートは果実味が強い。',
+    grain:'ポルトガルオーク',
+  },
+  {
+    id:'ex-bourbon',
+    name:'バーボン樽（再利用）',
+    nameEn:'Ex-Bourbon Cask',
+    color:'#c4832a',
+    spirits:['アイリッシュウイスキー','ライトスコッチ','ジャパニーズウイスキー'],
+    flavors:{ vanilla:4, spice:1, fruit:2, earth:1, floral:2, sweet:3, wood:2 },
+    desc:'バーボン熟成後に輸出される使用済み樽。軽いバニラ・はちみつ・マイルドなウッドノートを付与。コスト効率が良く世界で最も広く使われる。',
+    charInfo:'バーボン法律では使用済み樽の再利用が禁止されているため、スコットランドなどへ輸出。',
+    grain:'使用済みホワイトオーク',
+  },
+  {
+    id:'rum',
+    name:'ラム樽',
+    nameEn:'Rum Cask',
+    color:'#4a2c0a',
+    spirits:['実験的ウイスキー','スコッチ（フィニッシュ）'],
+    flavors:{ vanilla:3, spice:2, fruit:4, earth:1, floral:2, sweet:5, wood:2 },
+    desc:'熱帯果実・ブラウンシュガー・モラセスのような甘みを付与。近年のクラフトウイスキーで人気が高まっている非伝統的な樽材。',
+    charInfo:'カリブ海産またはグアテマラ産のラム樽が使われることが多い。',
+    grain:'使用済みオーク（様々）',
+  },
+];
+
+const FLAVOR_LABELS = {
+  vanilla:'バニラ', spice:'スパイス', fruit:'フルーツ',
+  earth:'アーシー', floral:'フローラル', sweet:'甘み', wood:'ウッド'
+};
+
+const GLOSSARY_ITEMS = [
+  { term:'チャー（Char）', def:'樽の内面を火で焼き焦がす工程。#1（軽）〜#4（重）の4段階。バーボン製造では法律で規定。バニリン生成に重要。' },
+  { term:'トースト（Toast）', def:'低温で樽の内面を加熱する工程。チャーよりも穏やかで、スパイシーなフレーバーを引き出す。ワイン樽に多い。' },
+  { term:'シーズニング（Seasoning）', def:'ウイスキー充填前にシェリー酒や別の液体で樽を処理する工程。樽木の風味を事前に馴染ませる。' },
+  { term:'フィニッシュ（Finish）', def:'主熟成の後、別の樽で数ヶ月〜数年追加熟成すること。ポートワイン・シェリー・ラム樽が人気。' },
+  { term:'バニリン（Vanillin）', def:'樽の内面（チャー層）から溶出するバニラ風味の化合物。アメリカンオークに特に多く含まれる。' },
+  { term:'タンニン', def:'樽木から溶出する収れん性のある化合物。口の中での渋みや構造感を与える。フレンチオークに多い。' },
+  { term:'エンジェルズシェア（Angel\'s Share）', def:'熟成中に蒸発するウイスキーの量。スコットランドでは年間約2%、暑い地域では年間10%以上。' },
+  { term:'クーパー（Cooper）', def:'樽を製造・修理する職人。伝統的な手仕事で、樽のサイズや形状により技術が異なる。' },
+  { term:'バリック（Barrique）', def:'ボルドー産225リットルの標準的なワイン樽サイズ。ウイスキーでも広く使用される。' },
+  { term:'バット（Butt）', def:'シェリー樽の大型サイズ（500〜550リットル）。バリックより大きく熟成が緩やか。' },
+  { term:'ホグスヘッド（Hogshead）', def:'約250リットルの樽。バーボン樽のスタッフからスコットランドで作られることが多い。' },
+];
+
+let currentMode = '';
+let quizQuestions = [];
+let quizCurrent = 0;
+let quizScore = 0;
+let answered = false;
+let selectedBarrelId = BARRELS[0].id;
+
+function getBest() { return JSON.parse(localStorage.getItem('coop_best') || '{"score":0}'); }
+function saveBest(b) { localStorage.setItem('coop_best', JSON.stringify(b)); }
+
+function shuffle(arr) {
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+function switchTab(id) {
+  ['quiz','chart','glossary'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t===id);
+    document.getElementById('panel-'+t).classList.toggle('hidden', t!==id);
+  });
+  if (id==='chart') initChart();
+  if (id==='glossary') renderGlossary();
+}
+
+function buildQuestions(mode) {
+  if (mode==='barrel2flavor') {
+    return shuffle(BARRELS).slice(0,8).map(b => {
+      const correctFlavor = Object.entries(b.flavors).sort((a,c)=>c[1]-a[1])[0][0];
+      const correctText = FLAVOR_LABELS[correctFlavor] + 'が最も強い風味';
+      const others = shuffle(Object.keys(FLAVOR_LABELS).filter(k=>k!==correctFlavor)).slice(0,3).map(k=>FLAVOR_LABELS[k]+'が最も強い風味');
+      return { label:'樽→風味', q:b.name+'（'+b.nameEn+'）\nの特徴的な風味プロフィールは？', options:shuffle([correctText,...others]), correct:correctText, explanation:b.name+': '+b.desc };
+    });
+  }
+  if (mode==='flavor2barrel') {
+    return shuffle(BARRELS).slice(0,8).map(b => {
+      const topFlavors = Object.entries(b.flavors).sort((a,c)=>c[1]-a[1]).slice(0,3).map(([k])=>FLAVOR_LABELS[k]);
+      const others = shuffle(BARRELS.filter(x=>x.id!==b.id)).slice(0,3).map(x=>x.name);
+      return { label:'風味→樽', q:'「'+topFlavors.join('・')+'」の風味プロフィールを持つ樽材は？', options:shuffle([b.name,...others]), correct:b.name, explanation:b.name+': '+b.desc };
+    });
+  }
+  if (mode==='spirit2barrel') {
+    const qs = [];
+    BARRELS.forEach(b => {
+      b.spirits.forEach(s => {
+        const others = shuffle(BARRELS.filter(x=>x.id!==b.id)).slice(0,3).map(x=>x.name);
+        qs.push({ label:'スピリッツ→樽', q:'「'+s+'」は伝統的にどの樽で熟成されますか？', options:shuffle([b.name,...others]), correct:b.name, explanation:b.name+': '+b.desc+'\n熟成酒: '+b.spirits.join('、') });
+      });
+    });
+    return shuffle(qs).slice(0,8);
+  }
+  return [];
+}
+
+function startQuiz(mode) {
+  currentMode = mode;
+  quizQuestions = buildQuestions(mode);
+  quizCurrent = 0;
+  quizScore = 0;
+  answered = false;
+  document.getElementById('quiz-home').classList.add('hidden');
+  document.getElementById('quiz-result').classList.add('hidden');
+  document.getElementById('quiz-active').classList.remove('hidden');
+  renderQ();
+}
+
+function renderQ() {
+  const q = quizQuestions[quizCurrent];
+  document.getElementById('q-num').textContent = quizCurrent+1;
+  document.getElementById('score-disp').textContent = quizScore + '点';
+  document.getElementById('q-progress').style.width = (quizCurrent/quizQuestions.length*100)+'%';
+  document.getElementById('q-label').textContent = q.label;
+  document.getElementById('q-text').textContent = q.q;
+  const opts = document.getElementById('q-options');
+  opts.innerHTML = '';
+  document.getElementById('q-explanation').classList.add('hidden');
+  answered = false;
+  q.options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn w-full text-left bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl py-2.5 px-4 text-sm font-medium text-gray-800 transition';
+    btn.textContent = opt;
+    btn.addEventListener('click', () => {
+      if (answered) return;
+      answered = true;
+      const correct = opt===q.correct;
+      if (correct) {
+        btn.classList.add('bg-green-100','border-green-500','text-green-900');
+        quizScore++;
+        document.getElementById('score-disp').textContent = quizScore+'点';
+      } else {
+        btn.classList.add('bg-red-100','border-red-400','text-red-800');
+        opts.querySelectorAll('button').forEach(b=>{ if(b.textContent===q.correct) b.classList.add('bg-green-100','border-green-500','text-green-900'); });
+      }
+      opts.querySelectorAll('button').forEach(b=>{ b.disabled=true; });
+      const expR = document.getElementById('exp-result');
+      expR.textContent = correct?'✅ 正解！':'❌ 不正解';
+      expR.className = 'font-bold text-sm mb-1 '+(correct?'text-green-700':'text-red-700');
+      document.getElementById('exp-text').textContent = q.explanation;
+      document.getElementById('q-explanation').classList.remove('hidden');
+    });
+    opts.appendChild(btn);
+  });
+}
+
+function initChart() {
+  const selector = document.getElementById('barrel-selector');
+  selector.innerHTML = '';
+  BARRELS.forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = 'px-3 py-1 rounded-full text-xs font-bold border-2 transition';
+    btn.style.borderColor = b.color;
+    btn.style.background = selectedBarrelId===b.id ? b.color : 'transparent';
+    btn.style.color = selectedBarrelId===b.id ? 'white' : b.color;
+    btn.textContent = b.name;
+    btn.addEventListener('click', () => {
+      selectedBarrelId = b.id;
+      initChart();
+    });
+    selector.appendChild(btn);
+  });
+  renderFlavorChart();
+}
+
+function renderFlavorChart() {
+  const b = BARRELS.find(x=>x.id===selectedBarrelId);
+  const chart = document.getElementById('flavor-chart');
+  chart.innerHTML = '';
+  Object.entries(b.flavors).forEach(([key, val]) => {
+    const row = document.createElement('div');
+    row.className = 'flex items-center gap-3';
+    const label = document.createElement('div');
+    label.className = 'w-20 text-xs font-semibold text-gray-700 text-right flex-shrink-0';
+    label.textContent = FLAVOR_LABELS[key];
+    const barWrap = document.createElement('div');
+    barWrap.className = 'flex-1 bg-gray-200 rounded-full h-4';
+    const bar = document.createElement('div');
+    bar.className = 'flavor-bar h-4 rounded-full';
+    bar.style.width = (val/5*100)+'%';
+    bar.style.background = b.color;
+    barWrap.appendChild(bar);
+    const num = document.createElement('div');
+    num.className = 'w-6 text-xs text-gray-500 font-bold';
+    num.textContent = val+'/5';
+    row.appendChild(label);
+    row.appendChild(barWrap);
+    row.appendChild(num);
+    chart.appendChild(row);
+  });
+  // Wood info
+  const info = document.getElementById('wood-info');
+  info.innerHTML = '';
+  // SVG wood grain illustration
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('width','100%');
+  svg.setAttribute('height','60');
+  svg.setAttribute('viewBox','0 0 300 60');
+  svg.setAttribute('aria-label', b.name+'の木目イラスト');
+  // Background
+  const bg = document.createElementNS(svgNS,'rect');
+  bg.setAttribute('width','300'); bg.setAttribute('height','60');
+  bg.setAttribute('fill', b.color); bg.setAttribute('opacity','0.2');
+  svg.appendChild(bg);
+  // Wood grain lines
+  for (let i=0; i<12; i++) {
+    const line = document.createElementNS(svgNS,'path');
+    const y = 5+i*5;
+    const wave = i%2===0?3:-3;
+    line.setAttribute('d',`M 0 ${y} C 75 ${y+wave} 150 ${y-wave} 225 ${y+wave} S 300 ${y} 300 ${y}`);
+    line.setAttribute('stroke', b.color);
+    line.setAttribute('stroke-width', i%3===0?'1.5':'0.8');
+    line.setAttribute('fill','none');
+    line.setAttribute('opacity','0.6');
+    svg.appendChild(line);
+  }
+  // Label
+  const text = document.createElementNS(svgNS,'text');
+  text.setAttribute('x','150'); text.setAttribute('y','42');
+  text.setAttribute('text-anchor','middle');
+  text.setAttribute('font-size','10'); text.setAttribute('fill', b.color);
+  text.setAttribute('font-weight','bold');
+  text.textContent = b.grain;
+  svg.appendChild(text);
+  info.appendChild(svg);
+  const nameEl = document.createElement('div');
+  nameEl.className = 'font-bold text-gray-800 mt-2 mb-1';
+  nameEl.textContent = b.name + '（' + b.nameEn + '）';
+  const descEl = document.createElement('p');
+  descEl.className = 'text-sm text-gray-600 mb-1';
+  descEl.textContent = b.desc;
+  const charEl = document.createElement('p');
+  charEl.className = 'text-xs text-amber-700';
+  charEl.textContent = b.charInfo;
+  const spiritsEl = document.createElement('p');
+  spiritsEl.className = 'text-xs text-gray-500 mt-1';
+  spiritsEl.textContent = '主な熟成酒: ' + b.spirits.join('・');
+  info.appendChild(nameEl);
+  info.appendChild(descEl);
+  info.appendChild(charEl);
+  info.appendChild(spiritsEl);
+}
+
+function renderGlossary() {
+  const el = document.getElementById('coop-glossary');
+  el.innerHTML = '';
+  GLOSSARY_ITEMS.forEach(g => {
+    const div = document.createElement('div');
+    div.className = 'border border-amber-100 rounded-xl p-3 bg-amber-50/50';
+    const term = document.createElement('div');
+    term.className = 'font-bold text-amber-900 text-sm mb-1';
+    term.textContent = g.term;
+    const def = document.createElement('div');
+    def.className = 'text-xs text-gray-600 leading-relaxed';
+    def.textContent = g.def;
+    div.appendChild(term);
+    div.appendChild(def);
+    el.appendChild(div);
+  });
+}
+
+// Event Listeners
+document.getElementById('tab-quiz').addEventListener('click', ()=>switchTab('quiz'));
+document.getElementById('tab-chart').addEventListener('click', ()=>switchTab('chart'));
+document.getElementById('tab-glossary').addEventListener('click', ()=>switchTab('glossary'));
+
+document.querySelectorAll('.quiz-mode-btn').forEach(btn => {
+  btn.addEventListener('click', ()=>startQuiz(btn.dataset.mode));
+});
+document.getElementById('btn-quit-quiz').addEventListener('click', ()=>{
+  document.getElementById('quiz-active').classList.add('hidden');
+  document.getElementById('quiz-result').classList.add('hidden');
+  document.getElementById('quiz-home').classList.remove('hidden');
+});
+document.getElementById('btn-next-q').addEventListener('click', ()=>{
+  quizCurrent++;
+  if (quizCurrent>=quizQuestions.length) {
+    document.getElementById('quiz-active').classList.add('hidden');
+    const emojis=['😢','🍵','🥃','🍾','🏆'];
+    const idx=Math.min(Math.floor(quizScore/quizQuestions.length*5),4);
+    document.getElementById('res-emoji').textContent=emojis[idx];
+    document.getElementById('res-score').textContent=quizScore+' / '+quizQuestions.length;
+    document.getElementById('quiz-result').classList.remove('hidden');
+    const best=getBest();
+    if(quizScore>best.score) { best.score=quizScore; saveBest(best); }
+    document.getElementById('best-score-coop').textContent=getBest().score+'/8';
+  } else {
+    renderQ();
+  }
+});
+document.getElementById('btn-replay').addEventListener('click', ()=>startQuiz(currentMode));
+document.getElementById('btn-home-res').addEventListener('click', ()=>{
+  document.getElementById('quiz-result').classList.add('hidden');
+  document.getElementById('quiz-home').classList.remove('hidden');
+});
+document.getElementById('btn-reset-coop').addEventListener('click', ()=>{
+  if(confirm('スコアをリセットしますか？')) { saveBest({score:0}); document.getElementById('best-score-coop').textContent='-'; }
+});
+
+// Init
+const best=getBest();
+document.getElementById('best-score-coop').textContent = best.score>0 ? best.score+'/8' : '-';
+</script>
+</body>
+</html>
